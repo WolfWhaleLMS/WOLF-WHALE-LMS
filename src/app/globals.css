@@ -1,26 +1,967 @@
 @import "tailwindcss";
 
+/* ============================================
+   BOREAL FOREST DESIGN SYSTEM - Wolf Whale LMS
+   ============================================
+   Inspired by Saskatchewan's winter forests
+   Deep Evergreen, Ice Blue, Frosted Glass
+   ============================================ */
+
+/* === CSS Variables === */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary Colors - Deep Evergreen */
+  --evergreen: #004d40;
+  --evergreen-light: #00695c;
+  --evergreen-dark: #00332c;
+  --primary-gradient: linear-gradient(135deg, #004d40, #00695c);
+
+  /* Ice Colors */
+  --ice-blue: #e0f7fa;
+  --ice-light: #f0fdff;
+  --ice-medium: #b2ebf2;
+  --ice-gradient: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+
+  /* Accent Colors - Aurora */
+  --aurora-green: #00e676;
+  --aurora-blue: #00b0ff;
+  --aurora-gradient: linear-gradient(135deg, #00e676, #00b0ff);
+
+  /* Gold/XP Colors - Northern Lights */
+  --gold-start: #ffd54f;
+  --gold-end: #ffb300;
+  --gold-gradient: linear-gradient(135deg, var(--gold-start), var(--gold-end));
+
+  /* Danger/Error Colors */
+  --danger-start: #ff5252;
+  --danger-end: #d32f2f;
+  --danger-gradient: linear-gradient(135deg, var(--danger-start), var(--danger-end));
+
+  /* Frosted Ice Glass Effects */
+  --frost-bg: rgba(255, 255, 255, 0.15);
+  --frost-bg-solid: rgba(255, 255, 255, 0.85);
+  --frost-bg-heavy: rgba(255, 255, 255, 0.95);
+  --frost-border: rgba(255, 255, 255, 0.6);
+  --frost-border-light: rgba(255, 255, 255, 0.3);
+  --frost-blur: 20px;
+  --frost-glow: 0 0 30px rgba(224, 247, 250, 0.5);
+
+  /* Shadows */
+  --shadow-soft: 0 4px 20px rgba(0, 77, 64, 0.1);
+  --shadow-medium: 0 8px 32px rgba(0, 77, 64, 0.15);
+  --shadow-ice: 0 8px 32px rgba(178, 235, 242, 0.4);
+  --shadow-glow: 0 0 40px rgba(0, 230, 118, 0.2);
+  --shadow-inset: inset 0 2px 4px rgba(0, 77, 64, 0.1);
+
+  /* Text Colors */
+  --text-primary: #004d40;
+  --text-secondary: #00695c;
+  --text-muted: #4db6ac;
+  --text-light: #ffffff;
+  --text-ice: #e0f7fa;
+
+  /* Spacing */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-ice: 16px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #e0f7fa;
+  --color-foreground: #004d40;
+  --font-sans: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* === Base Styles with Winter Forest Background === */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    linear-gradient(180deg,
+      rgba(0, 77, 64, 0.03) 0%,
+      rgba(224, 247, 250, 0.5) 30%,
+      rgba(178, 235, 242, 0.4) 60%,
+      rgba(224, 247, 250, 0.6) 100%
+    ),
+    radial-gradient(ellipse at top left, rgba(0, 230, 118, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(0, 176, 255, 0.1) 0%, transparent 50%),
+    linear-gradient(180deg, #e8f5e9 0%, #e0f7fa 50%, #e3f2fd 100%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* === Frosted Ice Glass Components === */
+.glass-card {
+  background: var(--frost-bg);
+  backdrop-filter: blur(var(--frost-blur));
+  -webkit-backdrop-filter: blur(var(--frost-blur));
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ice), var(--frost-glow);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium), 0 0 40px rgba(224, 247, 250, 0.6);
+}
+
+.glass-card-solid {
+  background: var(--frost-bg-solid);
+  backdrop-filter: blur(var(--frost-blur));
+  -webkit-backdrop-filter: blur(var(--frost-blur));
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ice);
+}
+
+.glass-card-flat {
+  background: var(--frost-bg-heavy);
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-md);
+}
+
+/* === Frosted Ice Block - Special Component === */
+.ice-block {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(224, 247, 250, 0.8) 50%,
+    rgba(255, 255, 255, 0.85) 100%
+  );
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-ice);
+  box-shadow:
+    0 8px 32px rgba(0, 77, 64, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+    0 2px 0 rgba(255, 255, 255, 0.8) inset,
+    0 0 60px rgba(178, 235, 242, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.ice-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  border-radius: var(--radius-ice) var(--radius-ice) 0 0;
+}
+
+/* === Navigation Glass === */
+.nav-glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(224, 247, 250, 0.9) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 2px solid var(--frost-border);
+  box-shadow: 0 4px 30px rgba(0, 77, 64, 0.08), var(--frost-glow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.sidebar-glass {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(224, 247, 250, 0.85) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 2px solid var(--frost-border);
+}
+
+/* === Frosted Ice Buttons === */
+.btn-3d {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  border-radius: var(--radius-ice);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.btn-3d::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: var(--radius-ice) var(--radius-ice) 0 0;
+  pointer-events: none;
+}
+
+.btn-3d:active {
+  transform: translateY(2px);
+}
+
+/* Ice Button - Primary */
+.btn-primary {
+  background: linear-gradient(145deg, var(--evergreen), var(--evergreen-light));
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 4px 20px rgba(0, 77, 64, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 2px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 6px 30px rgba(0, 77, 64, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset,
+    0 2px 0 rgba(255, 255, 255, 0.4) inset,
+    0 0 40px rgba(0, 230, 118, 0.2);
+  filter: brightness(1.1);
+}
+
+/* Ice Button - Secondary */
+.btn-secondary {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(224, 247, 250, 0.9));
+  color: var(--evergreen);
+  border: 2px solid var(--frost-border);
+  box-shadow:
+    0 4px 20px rgba(178, 235, 242, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+    0 2px 0 rgba(255, 255, 255, 1) inset;
+}
+
+.btn-secondary:hover {
+  box-shadow:
+    0 6px 30px rgba(178, 235, 242, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+    0 2px 0 rgba(255, 255, 255, 1) inset,
+    var(--frost-glow);
+}
+
+/* Ice Button - Accent */
+.btn-accent {
+  background: var(--aurora-gradient);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 4px 20px rgba(0, 230, 118, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset,
+    0 2px 0 rgba(255, 255, 255, 0.4) inset;
+}
+
+/* Ice Button - Gold */
+.btn-gold {
+  background: var(--gold-gradient);
+  color: var(--evergreen-dark);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 4px 20px rgba(255, 213, 79, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset,
+    0 2px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+/* Ice Button - Danger */
+.btn-danger {
+  background: var(--danger-gradient);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 4px 20px rgba(255, 82, 82, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 2px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+/* Ice Button - Ghost */
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--evergreen);
+  border: 2px solid var(--frost-border-light);
+  box-shadow: none;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--frost-border);
+  box-shadow: var(--frost-glow);
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-lg {
+  padding: 16px 32px;
+  font-size: 16px;
+  border-radius: var(--radius-lg);
+}
+
+/* === XP Bar & Gamification === */
+.xp-bar-container {
+  background: rgba(0, 77, 64, 0.1);
+  border-radius: 20px;
+  padding: 3px;
+  box-shadow: var(--shadow-inset);
+  border: 1px solid var(--frost-border-light);
+}
+
+.xp-bar {
+  height: 12px;
+  border-radius: 16px;
+  background: var(--gold-gradient);
+  box-shadow: 0 0 15px rgba(255, 213, 79, 0.5);
+  position: relative;
+  overflow: hidden;
+  transition: width var(--transition-slow);
+}
+
+.xp-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--gold-gradient);
+  border-radius: 18px;
+  font-weight: 700;
+  color: var(--evergreen-dark);
+  box-shadow:
+    0 2px 15px rgba(255, 213, 79, 0.4),
+    0 0 0 2px rgba(255, 255, 255, 0.5) inset;
+  font-size: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+.achievement-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(255, 213, 79, 0.2));
+  border: 2px solid rgba(255, 213, 79, 0.5);
+  border-radius: var(--radius-ice);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 0 20px rgba(255, 213, 79, 0.2);
+}
+
+.achievement-popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  background: var(--frost-bg-heavy);
+  border: 2px solid rgba(255, 213, 79, 0.6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-medium), 0 0 40px rgba(255, 213, 79, 0.3);
+  animation: bounce-in 0.5s ease;
+  z-index: 1000;
+}
+
+/* === Form Elements - Frosted Ice Style === */
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(224, 247, 250, 0.9));
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-ice);
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  box-shadow:
+    var(--shadow-inset),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--evergreen);
+  box-shadow:
+    var(--shadow-inset),
+    0 0 0 3px rgba(0, 77, 64, 0.1),
+    0 0 30px rgba(178, 235, 242, 0.3);
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.select-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(224, 247, 250, 0.9));
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-ice);
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23004d40' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+.textarea-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(224, 247, 250, 0.9));
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-ice);
+  font-size: 14px;
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  box-shadow: var(--shadow-inset);
+}
+
+.textarea-field:focus {
+  outline: none;
+  border-color: var(--evergreen);
+  box-shadow:
+    var(--shadow-inset),
+    0 0 0 3px rgba(0, 77, 64, 0.1),
+    var(--frost-glow);
+}
+
+/* === Data Tables - Ice Theme === */
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table thead {
+  background: linear-gradient(135deg, var(--evergreen), var(--evergreen-light));
+}
+
+.data-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: white;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table th:first-child {
+  border-radius: var(--radius-ice) 0 0 0;
+}
+
+.data-table th:last-child {
+  border-radius: 0 var(--radius-ice) 0 0;
+}
+
+.data-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--frost-border-light);
+  font-size: 14px;
+}
+
+.data-table tbody tr {
+  background: rgba(255, 255, 255, 0.7);
+  transition: background var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--frost-glow);
+}
+
+.data-table tbody tr:last-child td:first-child {
+  border-radius: 0 0 0 var(--radius-ice);
+}
+
+.data-table tbody tr:last-child td:last-child {
+  border-radius: 0 0 var(--radius-ice) 0;
+}
+
+/* === Status Badges - Ice Theme === */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 2px solid;
+}
+
+.badge-present {
+  background: rgba(0, 230, 118, 0.15);
+  color: #00695c;
+  border-color: rgba(0, 230, 118, 0.3);
+}
+
+.badge-absent {
+  background: rgba(255, 82, 82, 0.15);
+  color: #c62828;
+  border-color: rgba(255, 82, 82, 0.3);
+}
+
+.badge-late {
+  background: rgba(255, 213, 79, 0.2);
+  color: #f57f17;
+  border-color: rgba(255, 213, 79, 0.4);
+}
+
+.badge-excused {
+  background: rgba(0, 176, 255, 0.15);
+  color: #01579b;
+  border-color: rgba(0, 176, 255, 0.3);
+}
+
+.badge-pending {
+  background: rgba(128, 128, 128, 0.15);
+  color: #455a64;
+  border-color: rgba(128, 128, 128, 0.3);
+}
+
+.badge-graded {
+  background: rgba(0, 77, 64, 0.15);
+  color: var(--evergreen);
+  border-color: rgba(0, 77, 64, 0.3);
+}
+
+/* === File Upload - Ice Theme === */
+.file-dropzone {
+  border: 2px dashed var(--evergreen-light);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.6);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.file-dropzone:hover,
+.file-dropzone.active {
+  border-color: var(--evergreen);
+  background: rgba(224, 247, 250, 0.5);
+  box-shadow: var(--frost-glow);
+}
+
+/* === Modal - Ice Theme === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 77, 64, 0.3);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fade-in 0.2s ease;
+}
+
+.modal-content {
+  background: var(--frost-bg-heavy);
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-medium), var(--frost-glow);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-in 0.3s ease;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 2px solid var(--frost-border-light);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 2px solid var(--frost-border-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* === Progress Bars - Ice Theme === */
+.progress-bar {
+  height: 8px;
+  background: rgba(0, 77, 64, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--frost-border-light);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--evergreen), var(--aurora-green));
+  border-radius: 4px;
+  transition: width var(--transition-slow);
+  box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
+.progress-fill.gold {
+  background: var(--gold-gradient);
+  box-shadow: 0 0 10px rgba(255, 213, 79, 0.4);
+}
+
+.progress-fill.danger {
+  background: var(--danger-gradient);
+  box-shadow: 0 0 10px rgba(255, 82, 82, 0.3);
+}
+
+/* === Cards - Ice Theme === */
+.course-card {
+  background: var(--frost-bg-heavy);
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-ice);
+  transition: all var(--transition-normal);
+}
+
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-medium), var(--frost-glow);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.course-card-image {
+  height: 120px;
+  background: linear-gradient(135deg, var(--evergreen), var(--evergreen-light));
+  position: relative;
+}
+
+.course-card-body {
+  padding: 20px;
+}
+
+.stat-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(224, 247, 250, 0.9));
+  border: 2px solid var(--frost-border);
+  border-radius: var(--radius-ice);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow-ice);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--evergreen), var(--aurora-green), var(--aurora-blue));
+}
+
+.stat-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--evergreen), var(--evergreen-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-card-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* === Sidebar Navigation - Ice Theme === */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-ice);
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  border: 2px solid transparent;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(224, 247, 250, 0.6);
+  color: var(--evergreen);
+  border-color: var(--frost-border-light);
+}
+
+.sidebar-nav-item.active {
+  background: linear-gradient(135deg, var(--evergreen), var(--evergreen-light));
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-soft);
+}
+
+/* === Animations === */
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 230, 118, 0.4);
+  }
+}
+
+@keyframes aurora {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes frost-pulse {
+  0%, 100% {
+    box-shadow: var(--frost-glow);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(224, 247, 250, 0.7);
+  }
+}
+
+/* === Skeleton Loading === */
+.skeleton {
+  background: linear-gradient(90deg, rgba(224, 247, 250, 0.5) 25%, rgba(178, 235, 242, 0.5) 50%, rgba(224, 247, 250, 0.5) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* === Utility Classes === */
+.gradient-text {
+  background: linear-gradient(135deg, var(--evergreen), var(--evergreen-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-aurora {
+  background: var(--aurora-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-pulse {
+  animation: frost-pulse 2s ease-in-out infinite;
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+  .glass-card {
+    border-radius: var(--radius-md);
+  }
+
+  .btn-3d {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .stat-card-value {
+    font-size: 24px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+/* === Scrollbar Styling - Ice Theme === */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(224, 247, 250, 0.3);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--evergreen-light), var(--evergreen));
+  border-radius: 5px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--evergreen), var(--evergreen-dark));
+}
+
+/* === Print Styles === */
+@media print {
+  body {
+    background: white;
+  }
+
+  .nav-glass,
+  .sidebar-glass,
+  .btn-3d {
+    display: none;
+  }
+
+  .glass-card,
+  .glass-card-solid {
+    background: white;
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
 }

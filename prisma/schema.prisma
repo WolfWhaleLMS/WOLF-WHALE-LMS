@@ -1,0 +1,349 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+// User roles hierarchy:
+// MASTER -> can create ADMIN
+// ADMIN -> can create TEACHER, STUDENT, PARENT
+// TEACHER -> can manage courses/grades
+// STUDENT -> can view courses/submit work
+// PARENT -> can view child progress
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          String    @default("STUDENT") // MASTER, ADMIN, TEACHER, STUDENT, PARENT
+  createdById   String?   // Who created this user (for audit trail)
+  avatar        String?
+  xp            Int       @default(0)
+  level         Int       @default(1)
+  streak        Int       @default(0)
+  lastActiveAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  enrollments       Enrollment[]
+  coursesTeaching   Course[]           @relation("TeacherCourses")
+  submissions       Submission[]
+  grades            Grade[]            @relation("GradedBy")
+  attendanceRecords Attendance[]
+  announcements     Announcement[]
+  discussionPosts   DiscussionPost[]
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]          @relation("ReceivedMessages")
+  calendarEvents    CalendarEvent[]
+  achievements      UserAchievement[]
+  notifications     Notification[]
+
+  // Parent-Child relations
+  children          ParentChild[]      @relation("ParentRelation")
+  parents           ParentChild[]      @relation("ChildRelation")
+  permissionSlips   PermissionSlip[]   @relation("StudentPermissions")
+  signedSlips       PermissionSlip[]   @relation("SignedBy")
+}
+
+model ParentChild {
+  id        String   @id @default(cuid())
+  parentId  String
+  childId   String
+  createdAt DateTime @default(now())
+
+  parent    User     @relation("ParentRelation", fields: [parentId], references: [id], onDelete: Cascade)
+  child     User     @relation("ChildRelation", fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  imageUrl    String?
+  color       String   @default("#00d4aa")
+  isPublished Boolean  @default(false)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacherId   String
+  teacher     User     @relation("TeacherCourses", fields: [teacherId], references: [id])
+
+  // Relations
+  enrollments   Enrollment[]
+  modules       Module[]
+  announcements Announcement[]
+  discussions   Discussion[]
+  events        CalendarEvent[]
+}
+
+model Enrollment {
+  id           String   @id @default(cuid())
+  studentId    String
+  courseId     String
+  currentGrade Float?
+  enrolledAt   DateTime @default(now())
+
+  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  name        String
+  description String?
+  position    Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  items       ModuleItem[]
+}
+
+model ModuleItem {
+  id          String   @id @default(cuid())
+  moduleId    String
+  title       String
+  type        String   // ASSIGNMENT, PAGE, FILE, LINK, QUIZ
+  content     String?
+  fileUrl     String?
+  linkUrl     String?
+  position    Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  module      Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  assignment  Assignment?
+}
+
+model Assignment {
+  id              String    @id @default(cuid())
+  moduleItemId    String    @unique
+  pointsPossible  Float     @default(100)
+  dueDate         DateTime?
+  availableFrom   DateTime?
+  availableUntil  DateTime?
+  submissionTypes String    @default("FILE") // FILE, TEXT, URL, NONE (comma-separated)
+  allowedAttempts Int       @default(1)
+  instructions    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  moduleItem      ModuleItem   @relation(fields: [moduleItemId], references: [id], onDelete: Cascade)
+  submissions     Submission[]
+  rubric          Rubric?
+}
+
+model Submission {
+  id           String    @id @default(cuid())
+  assignmentId String
+  studentId    String
+  attempt      Int       @default(1)
+  content      String?
+  fileUrl      String?
+  submittedAt  DateTime  @default(now())
+  isLate       Boolean   @default(false)
+
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  grade        Grade?
+}
+
+model Grade {
+  id           String   @id @default(cuid())
+  submissionId String   @unique
+  graderId     String
+  score        Float
+  feedback     String?
+  rubricScores String?  // JSON string of rubric criterion scores
+  gradedAt     DateTime @default(now())
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  grader       User       @relation("GradedBy", fields: [graderId], references: [id])
+}
+
+model Rubric {
+  id           String   @id @default(cuid())
+  assignmentId String   @unique
+  title        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  criteria     RubricCriterion[]
+}
+
+model RubricCriterion {
+  id          String   @id @default(cuid())
+  rubricId    String
+  description String
+  points      Float
+  position    Int      @default(0)
+
+  rubric      Rubric         @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  ratings     RubricRating[]
+}
+
+model RubricRating {
+  id          String   @id @default(cuid())
+  criterionId String
+  description String
+  points      Float
+  position    Int      @default(0)
+
+  criterion   RubricCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  courseId  String
+  date      DateTime
+  status    String   @default("PRESENT") // PRESENT, ABSENT, LATE, EXCUSED
+  notes     String?
+  createdAt DateTime @default(now())
+
+  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId, date])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  courseId  String
+  authorId  String
+  title     String
+  content   String
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Discussion {
+  id        String   @id @default(cuid())
+  courseId  String
+  title     String
+  content   String?
+  isPinned  Boolean  @default(false)
+  isLocked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  posts     DiscussionPost[]
+}
+
+model DiscussionPost {
+  id           String   @id @default(cuid())
+  discussionId String
+  authorId     String
+  parentId     String?
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  discussion   Discussion       @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  author       User             @relation(fields: [authorId], references: [id])
+  parent       DiscussionPost?  @relation("PostReplies", fields: [parentId], references: [id])
+  replies      DiscussionPost[] @relation("PostReplies")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  subject    String
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String?
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime?
+  allDay      Boolean   @default(false)
+  type        String    @default("PERSONAL") // PERSONAL, ASSIGNMENT, CLASS, EXAM
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course?   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model PermissionSlip {
+  id          String    @id @default(cuid())
+  studentId   String
+  title       String
+  description String
+  dueDate     DateTime
+  signedById  String?
+  signedAt    DateTime?
+  status      String    @default("PENDING") // PENDING, SIGNED, EXPIRED
+  createdAt   DateTime  @default(now())
+
+  student     User      @relation("StudentPermissions", fields: [studentId], references: [id], onDelete: Cascade)
+  signedBy    User?     @relation("SignedBy", fields: [signedById], references: [id])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String
+  xpReward    Int      @default(0)
+  criteria    String   // JSON criteria for unlocking
+  createdAt   DateTime @default(now())
+
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // GRADE, ASSIGNMENT, MESSAGE, ACHIEVEMENT, ANNOUNCEMENT
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
