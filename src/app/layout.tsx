@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 import DemoSessionProvider from "@/components/DemoSessionProvider";
+import MusicProvider from "@/components/MusicContext";
+import RadioWidget from "@/components/RadioWidget";
 
 export const metadata: Metadata = {
   title: "Wolf Whale LMS - Saskatchewan K-12 Learning",
@@ -19,7 +21,10 @@ export default function RootLayout({
       <body className="antialiased">
         <SessionProvider>
           <DemoSessionProvider>
-            {children}
+            <MusicProvider>
+              {children}
+              <RadioWidget />
+            </MusicProvider>
           </DemoSessionProvider>
         </SessionProvider>
       </body>
