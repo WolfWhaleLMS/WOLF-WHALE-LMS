@@ -168,10 +168,10 @@ export default function AdminDashboard() {
               <div className="font-bold text-[var(--evergreen)]">View Reports</div>
               <div className="text-sm text-[var(--text-muted)]">Analytics & insights</div>
             </Link>
-            <Link href="/inbox" className="p-4 rounded-xl bg-white/50 border-2 border-[var(--frost-border-light)] hover:bg-[var(--ice-blue)]/30 hover:border-[var(--evergreen-light)]/30 transition-all">
-              <div className="text-2xl mb-2">📧</div>
-              <div className="font-bold text-[var(--evergreen)]">Messages</div>
-              <div className="text-sm text-[var(--text-muted)]">System notifications</div>
+            <Link href="/admin/subscription" className="p-4 rounded-xl bg-white/50 border-2 border-[var(--frost-border-light)] hover:bg-[var(--ice-blue)]/30 hover:border-[var(--evergreen-light)]/30 transition-all">
+              <div className="text-2xl mb-2">💳</div>
+              <div className="font-bold text-[var(--evergreen)]">Subscription</div>
+              <div className="text-sm text-[var(--text-muted)]">Manage billing & plan</div>
             </Link>
           </div>
         </div>

@@ -6,6 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seed...');
 
+  // Check if mock data should be seeded
+  const shouldSeedMockData = process.env.SEED_MOCK_DATA === 'true';
+
+  if (!shouldSeedMockData) {
+    console.log('📋 SEED_MOCK_DATA is not set to "true"');
+    console.log('   Skipping mock data generation (production default)');
+    console.log('   To seed demo data, run: SEED_MOCK_DATA=true npx prisma db seed');
+    console.log('✅ Database ready (no mock data created)');
+    return;
+  }
+
   // Clear existing data
   console.log('🧹 Clearing existing data...');
   await prisma.notification.deleteMany();
@@ -30,6 +41,7 @@ async function main() {
   await prisma.course.deleteMany();
   await prisma.parentChild.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.school.deleteMany();
 
   // MASTER ACCOUNT CREDENTIALS
   // ⚠️ CHANGE THESE IN PRODUCTION!
@@ -40,6 +52,19 @@ async function main() {
   const masterPasswordHash = await bcrypt.hash(MASTER_PASSWORD, 12);
   const demoPasswordHash = await bcrypt.hash('demo123', 12);
 
+  // Create Demo School
+  console.log('🏫 Creating demo school...');
+  const demoSchool = await prisma.school.create({
+    data: {
+      name: 'Demo Saskatchewan School',
+      slug: 'demo-school',
+      subscriptionTier: 'PAID',
+      maxUsers: 100,
+      maxCourses: 999999,
+      isActive: true,
+    },
+  });
+
   // Create Master Account
   console.log('👑 Creating MASTER account...');
   const master = await prisma.user.create({
@@ -49,6 +74,7 @@ async function main() {
       firstName: 'System',
       lastName: 'Administrator',
       role: 'MASTER',
+      schoolId: demoSchool.id,
     },
   });
 
@@ -62,6 +88,7 @@ async function main() {
       lastName: 'Admin',
       role: 'ADMIN',
       createdById: master.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -75,6 +102,7 @@ async function main() {
       lastName: 'Wilson',
       role: 'TEACHER',
       createdById: admin.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -86,6 +114,7 @@ async function main() {
       lastName: 'Thunder',
       role: 'TEACHER',
       createdById: admin.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -97,6 +126,7 @@ async function main() {
       lastName: 'Peters',
       role: 'TEACHER',
       createdById: admin.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -113,6 +143,7 @@ async function main() {
       level: 3,
       streak: 7,
       createdById: admin.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -127,6 +158,7 @@ async function main() {
       level: 2,
       streak: 5,
       createdById: admin.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -141,6 +173,7 @@ async function main() {
       level: 4,
       streak: 12,
       createdById: admin.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -154,6 +187,7 @@ async function main() {
       lastName: 'Johnson',
       role: 'PARENT',
       createdById: admin.id,
+      schoolId: demoSchool.id,
     },
   });
 
@@ -338,7 +372,7 @@ async function main() {
     },
   });
 
-  const mathModule3 = await prisma.module.create({
+  await prisma.module.create({
     data: {
       courseId: mathFoundations.id,
       name: 'Right Triangle Trigonometry',
@@ -369,7 +403,7 @@ async function main() {
     },
   });
 
-  const natModule3 = await prisma.module.create({
+  await prisma.module.create({
     data: {
       courseId: nativeStudies.id,
       name: 'Residential Schools and Reconciliation',

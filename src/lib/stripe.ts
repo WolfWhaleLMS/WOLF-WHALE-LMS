@@ -10,93 +10,20 @@ export const stripe = stripeSecretKey
     })
   : null;
 
-// Subscription tiers and their Stripe price IDs
-// These should be configured in your Stripe dashboard
-export const SUBSCRIPTION_TIERS = {
-  FREE: {
-    name: 'Free',
-    priceId: null, // No payment required
-    maxUsers: 50,
-    maxCourses: 10,
-    features: [
-      'Up to 50 users',
-      'Up to 10 courses',
-      'Basic analytics',
-      'Email support',
-    ],
-  },
-  STARTER: {
-    name: 'Starter',
-    priceId: process.env.STRIPE_STARTER_PRICE_ID || 'price_starter',
-    maxUsers: 200,
-    maxCourses: 50,
-    monthlyPrice: 49,
-    features: [
-      'Up to 200 users',
-      'Up to 50 courses',
-      'Advanced analytics',
-      'Priority support',
-      'Custom branding',
-    ],
-  },
-  PRO: {
-    name: 'Pro',
-    priceId: process.env.STRIPE_PRO_PRICE_ID || 'price_pro',
-    maxUsers: 1000,
-    maxCourses: -1, // Unlimited
-    monthlyPrice: 149,
-    features: [
-      'Up to 1,000 users',
-      'Unlimited courses',
-      'Advanced analytics & reports',
-      '24/7 priority support',
-      'Custom branding',
-      'API access',
-      'SSO integration',
-    ],
-  },
-  ENTERPRISE: {
-    name: 'Enterprise',
-    priceId: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise',
-    maxUsers: -1, // Unlimited
-    maxCourses: -1, // Unlimited
-    monthlyPrice: 499,
-    features: [
-      'Unlimited users',
-      'Unlimited courses',
-      'Full analytics suite',
-      'Dedicated support manager',
-      'Custom branding',
-      'Full API access',
-      'SSO integration',
-      'Custom integrations',
-      'SLA guarantee',
-    ],
-  },
-} as const;
+// Usage-based pricing: $7 CAD per user per month
+export const PRICE_PER_USER_CAD = 7;
+export const PER_USER_PRICE_ID = process.env.STRIPE_PER_USER_PRICE_ID || 'price_per_user';
 
-export type SubscriptionTier = keyof typeof SUBSCRIPTION_TIERS;
-
-// Helper to get tier from price ID
-export function getTierFromPriceId(priceId: string): SubscriptionTier | null {
-  for (const [tier, config] of Object.entries(SUBSCRIPTION_TIERS)) {
-    if (config.priceId === priceId) {
-      return tier as SubscriptionTier;
-    }
-  }
-  return null;
-}
-
-// Create checkout session for subscription
+// Create checkout session for per-user subscription
 export async function createCheckoutSession({
   schoolId,
-  tier,
+  quantity,
   successUrl,
   cancelUrl,
   customerEmail,
 }: {
-  schoolId: string;
-  tier: SubscriptionTier;
+  schoolId?: string;
+  quantity: number;
   successUrl: string;
   cancelUrl: string;
   customerEmail?: string;
@@ -105,10 +32,8 @@ export async function createCheckoutSession({
     throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY.');
   }
 
-  const tierConfig = SUBSCRIPTION_TIERS[tier];
-
-  if (!tierConfig.priceId) {
-    throw new Error('Cannot create checkout for free tier');
+  if (quantity < 1 || quantity > 10000) {
+    throw new Error('Quantity must be between 1 and 10,000 users');
   }
 
   const session = await stripe.checkout.sessions.create({
@@ -116,21 +41,68 @@ export async function createCheckoutSession({
     payment_method_types: ['card'],
     line_items: [
       {
-        price: tierConfig.priceId,
-        quantity: 1,
+        price: PER_USER_PRICE_ID,
+        quantity: quantity,
       },
     ],
     success_url: successUrl,
     cancel_url: cancelUrl,
     customer_email: customerEmail,
     metadata: {
-      schoolId,
-      tier,
+      schoolId: schoolId || '',
+      quantity: quantity.toString(),
     },
     subscription_data: {
       metadata: {
-        schoolId,
-        tier,
+        schoolId: schoolId || '',
+        quantity: quantity.toString(),
+      },
+    },
+  });
+
+  return session;
+}
+
+// Create checkout session for public signup (no existing school)
+export async function createPublicCheckoutSession({
+  quantity,
+  successUrl,
+  cancelUrl,
+  customerEmail,
+}: {
+  quantity: number;
+  successUrl: string;
+  cancelUrl: string;
+  customerEmail?: string;
+}) {
+  if (!stripe) {
+    throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY.');
+  }
+
+  if (quantity < 1 || quantity > 10000) {
+    throw new Error('Quantity must be between 1 and 10,000 users');
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: PER_USER_PRICE_ID,
+        quantity: quantity,
+      },
+    ],
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    customer_email: customerEmail,
+    metadata: {
+      quantity: quantity.toString(),
+      isNewSignup: 'true',
+    },
+    subscription_data: {
+      metadata: {
+        quantity: quantity.toString(),
+        isNewSignup: 'true',
       },
     },
   });
@@ -153,6 +125,19 @@ export async function createPortalSession({
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
+  });
+
+  return session;
+}
+
+// Retrieve checkout session (for verifying payment after redirect)
+export async function getCheckoutSession(sessionId: string) {
+  if (!stripe) {
+    throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY.');
+  }
+
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ['subscription', 'customer'],
   });
 
   return session;

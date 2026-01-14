@@ -68,6 +68,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get the current user's school to check user limits
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { schoolId: true },
+    });
+
+    if (currentUser?.schoolId) {
+      // Get school with user count
+      const school = await prisma.school.findUnique({
+        where: { id: currentUser.schoolId },
+        select: {
+          maxUsers: true,
+          subscriptionTier: true,
+          _count: {
+            select: { users: true },
+          },
+        },
+      });
+
+      if (school) {
+        // Check if subscription is canceled
+        if (school.subscriptionTier === 'CANCELED') {
+          return NextResponse.json(
+            { error: 'Your subscription has been canceled. Please renew to add users.' },
+            { status: 403 }
+          );
+        }
+
+        // Check user limit
+        if (school._count.users >= school.maxUsers) {
+          return NextResponse.json(
+            {
+              error: `User limit reached (${school._count.users}/${school.maxUsers}). Please upgrade your subscription to add more users.`,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const { firstName, lastName, email, password, role } = await request.json();
 
     // Validate required fields
@@ -112,7 +152,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user (assign to same school as creator)
     const user = await prisma.user.create({
       data: {
         firstName,
@@ -121,6 +161,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         role,
         createdById: session.user.id,
+        schoolId: currentUser?.schoolId || null,
         xp: role === 'STUDENT' ? 0 : undefined,
         level: role === 'STUDENT' ? 1 : undefined,
         streak: role === 'STUDENT' ? 0 : undefined,

@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { createCheckoutSession } from '@/lib/stripe';
+import { createPortalSession } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,12 +13,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { schoolId, quantity } = body as { schoolId: string; quantity: number };
+    const { schoolId } = body as { schoolId: string };
 
-    // Validate quantity
-    if (!quantity || quantity < 1 || quantity > 10000) {
+    if (!schoolId) {
       return NextResponse.json(
-        { error: 'Quantity must be between 1 and 10,000 users' },
+        { error: 'School ID is required' },
         { status: 400 }
       );
     }
@@ -37,10 +36,9 @@ export async function POST(request: NextRequest) {
 
     // Verify user has permission (MASTER or ADMIN of this school)
     if (session.user.role !== 'MASTER') {
-      // Get user's school from database
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { schoolId: true }
+        select: { schoolId: true },
       });
       const isAdmin = session.user.role === 'ADMIN' && user?.schoolId === schoolId;
       if (!isAdmin) {
@@ -51,23 +49,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get the origin from request headers
-    const origin = request.headers.get('origin') || 'https://wolfwhale.ca';
+    // Check if the school has a Stripe customer ID
+    if (!school.stripeCustomerId) {
+      return NextResponse.json(
+        { error: 'No subscription found. Please subscribe to a plan first.' },
+        { status: 400 }
+      );
+    }
 
-    // Create Stripe checkout session
-    const checkoutSession = await createCheckoutSession({
-      schoolId,
-      quantity,
-      successUrl: `${origin}/admin/subscription?success=true`,
-      cancelUrl: `${origin}/admin/subscription?canceled=true`,
-      customerEmail: session.user.email || undefined,
+    // Get the origin from request headers
+    const origin = request.headers.get('origin') || 'http://localhost:3000';
+    const returnUrl = session.user.role === 'MASTER'
+      ? `${origin}/master/schools/${schoolId}`
+      : `${origin}/admin/subscription`;
+
+    // Create Stripe portal session
+    const portalSession = await createPortalSession({
+      customerId: school.stripeCustomerId,
+      returnUrl,
     });
 
-    return NextResponse.json({ url: checkoutSession.url });
+    return NextResponse.json({ url: portalSession.url });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Error creating portal session:', error);
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: 'Failed to create portal session' },
       { status: 500 }
     );
   }

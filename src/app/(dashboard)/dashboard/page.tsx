@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import XPBar from '@/components/XPBar';
+import Tamagotchi from '@/components/Tamagotchi';
 import { useDemoSession } from '@/components/DemoSessionProvider';
 
 interface Course {
@@ -239,6 +240,9 @@ export default function DashboardPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Tamagotchi Pet */}
+          <Tamagotchi isDemo={isDemo} />
+
           {/* Upcoming Assignments */}
           <div className="ice-block p-5">
             <h3 className="font-bold text-[var(--evergreen)] mb-4">Upcoming Assignments</h3>

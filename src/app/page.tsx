@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import PricingSection from '@/components/PricingSection';
 
 export default function LandingPage() {
   return (
@@ -199,19 +200,22 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <PricingSection />
+
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="ice-block p-12 text-center">
             <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">
-              Ready to Explore Wolf Whale?
+              Not Ready to Commit?
             </h2>
             <p className="text-xl text-[var(--text-secondary)] mb-8">
               Try our demo with Saskatchewan Grade 10 curriculum - no account required!
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/login" className="btn-3d btn-primary px-8 py-4 text-lg">
-                Try Demo Now
+              <Link href="/login" className="btn-3d btn-secondary px-8 py-4 text-lg">
+                Try Demo First
               </Link>
             </div>
           </div>

@@ -53,6 +53,9 @@ model User {
   parents           ParentChild[]      @relation("ChildRelation")
   permissionSlips   PermissionSlip[]   @relation("StudentPermissions")
   signedSlips       PermissionSlip[]   @relation("SignedBy")
+
+  // Virtual pet for students
+  pet               Pet?
 }
 
 // School/Organization - created by MASTER users
@@ -371,4 +374,22 @@ model Notification {
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Tamagotchi-style virtual pet for students
+model Pet {
+  id          String   @id @default(cuid())
+  studentId   String   @unique
+  name        String   @default("Buddy")
+  type        String   @default("DINO") // DINO, CAT, DOG, BUNNY, DRAGON
+  hunger      Int      @default(100)    // 0-100, decreases over time
+  happiness   Int      @default(100)    // 0-100, decreases over time
+  xp          Int      @default(0)
+  level       Int      @default(1)
+  lastFed     DateTime @default(now())
+  lastPlayed  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
