@@ -2,8 +2,9 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import ChildSwitcher from '@/components/ChildSwitcher';
+import { useDemoSession } from '@/components/DemoSessionProvider';
 
 interface AttendanceRecord {
   id: string;
@@ -14,57 +15,103 @@ interface AttendanceRecord {
   notes?: string;
 }
 
+// Generate demo attendance data
+function generateDemoAttendance(): AttendanceRecord[] {
+  const records: AttendanceRecord[] = [];
+  const courses = [
+    { name: 'Foundations of Mathematics 10', code: 'FOM10' },
+    { name: 'English Language Arts A10', code: 'ELA-A10' },
+    { name: 'Science 10', code: 'SCI10' },
+    { name: 'Social Studies 10', code: 'SOC10' },
+  ];
+  const statuses: AttendanceRecord['status'][] = ['present', 'present', 'present', 'present', 'late', 'present', 'excused'];
+
+  for (let i = 0; i < 20; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const course = courses[i % courses.length];
+    records.push({
+      id: `${i}`,
+      date: date.toISOString().split('T')[0],
+      courseName: course.name,
+      courseCode: course.code,
+      status: statuses[i % statuses.length],
+    });
+  }
+  return records;
+}
+
 export default function ParentAttendancePage() {
   const { data: session, status } = useSession();
+  const { isDemo, demoUser, isDemoLoading } = useDemoSession();
   const router = useRouter();
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const currentUser = isDemo && demoUser ? demoUser : session?.user;
+  const isLoggedIn = isDemo || status === 'authenticated';
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
+    if (isDemoLoading) return;
+
+    if (!isDemo) {
+      if (status === 'unauthenticated') {
+        router.push('/login');
+      } else if (session?.user?.role !== 'PARENT') {
+        router.push('/dashboard');
+      }
+    } else if (isDemo && demoUser?.role !== 'PARENT') {
+      router.push('/dashboard');
     }
-  }, [status, router]);
+  }, [status, session, router, isDemo, demoUser, isDemoLoading]);
 
   useEffect(() => {
-    if (session?.user?.children?.length && !selectedChildId) {
+    if (isDemo && demoUser?.children?.length) {
+      setSelectedChildId(demoUser.children[0].id);
+    } else if (session?.user?.children?.length && !selectedChildId) {
       setSelectedChildId(session.user.children[0].id);
     }
-  }, [session, selectedChildId]);
+  }, [session, selectedChildId, isDemo, demoUser]);
+
+  const fetchAttendance = useCallback(async () => {
+    if (!selectedChildId) return;
+
+    if (isDemo) {
+      setAttendance(generateDemoAttendance());
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/parent/attendance?childId=${selectedChildId}`);
+      const data = await response.json();
+      if (response.ok) {
+        setAttendance(data.attendance);
+      }
+    } catch (error) {
+      console.error('Failed to fetch attendance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedChildId, isDemo]);
 
   useEffect(() => {
     if (selectedChildId) {
-      // Mock attendance data
-      const records: AttendanceRecord[] = [];
-      const courses = [
-        { name: 'Introduction to Web Development', code: 'WEB101' },
-        { name: 'Data Structures & Algorithms', code: 'CS201' },
-        { name: 'User Experience Design', code: 'UX301' },
-      ];
-      const statuses: AttendanceRecord['status'][] = ['present', 'present', 'present', 'present', 'late', 'present', 'absent', 'excused'];
-
-      for (let i = 0; i < 20; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const course = courses[i % courses.length];
-        records.push({
-          id: `${i}`,
-          date: date.toISOString().split('T')[0],
-          courseName: course.name,
-          courseCode: course.code,
-          status: statuses[Math.floor(Math.random() * statuses.length)],
-        });
-      }
-      setAttendance(records);
+      fetchAttendance();
     }
-  }, [selectedChildId]);
+  }, [selectedChildId, fetchAttendance]);
 
-  if (status === 'loading') {
+  if (isDemoLoading || (!isDemo && status === 'loading') || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00d4aa]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--evergreen)]"></div>
       </div>
     );
+  }
+
+  if (!isLoggedIn || !currentUser) {
+    return null;
   }
 
   const summary = {
@@ -87,16 +134,37 @@ export default function ParentAttendancePage() {
 
   return (
     <div className="space-y-6">
+      {/* Demo Banner */}
+      {isDemo && (
+        <div className="ice-block p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">👨‍👩‍👧</span>
+            <div>
+              <p className="font-semibold text-[var(--evergreen)]">Demo Mode - Parent Attendance</p>
+              <p className="text-sm text-[var(--text-muted)]">Viewing sample attendance data</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-          <p className="text-gray-600">View your child&apos;s attendance records</p>
+          <h1 className="text-2xl font-bold text-[var(--evergreen)]">Attendance</h1>
+          <p className="text-[var(--text-muted)]">View your child&apos;s attendance records</p>
         </div>
-        <ChildSwitcher
-          selectedChildId={selectedChildId}
-          onChildSelect={setSelectedChildId}
-        />
+        {!isDemo && (
+          <ChildSwitcher
+            selectedChildId={selectedChildId}
+            onChildSelect={setSelectedChildId}
+          />
+        )}
+        {isDemo && demoUser?.children && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-[var(--ice-blue)]/50 border-2 border-[var(--frost-border)] rounded-xl">
+            <span className="text-[var(--evergreen)] font-semibold">{demoUser.children[0].name}</span>
+            <span className="badge badge-graded text-xs">Grade 10</span>
+          </div>
+        )}
       </div>
 
       {/* Summary */}

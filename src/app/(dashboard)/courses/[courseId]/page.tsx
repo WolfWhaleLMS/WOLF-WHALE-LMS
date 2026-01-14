@@ -5,109 +5,270 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Button from '@/components/Button';
+import { useDemoSession } from '@/components/DemoSessionProvider';
 
-interface Module {
+interface Assignment {
   id: string;
-  name: string;
-  description: string;
-  items: ModuleItem[];
-  isExpanded: boolean;
+  pointsPossible: number;
+  dueDate: string | null;
+  instructions: string | null;
+  submissionTypes: string;
 }
 
 interface ModuleItem {
   id: string;
   title: string;
   type: 'ASSIGNMENT' | 'PAGE' | 'FILE' | 'LINK' | 'QUIZ';
+  content: string | null;
+  fileUrl: string | null;
+  linkUrl: string | null;
+  position: number;
+  assignment: Assignment | null;
   isCompleted: boolean;
-  dueDate?: string;
+  grade: number | null;
+}
+
+interface Module {
+  id: string;
+  name: string;
+  description: string | null;
+  position: number;
+  items: ModuleItem[];
+  isExpanded?: boolean;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  isPinned: boolean;
+  createdAt: string;
+  author: string;
 }
 
 interface Course {
   id: string;
   name: string;
   code: string;
-  description: string;
+  description: string | null;
   color: string;
   teacher: string;
-  progress: number;
+  progress: number | null;
   modules: Module[];
+  announcements: Announcement[];
 }
+
+// Demo data for demo mode
+const DEMO_COURSE: Course = {
+  id: 'demo-1',
+  name: 'Foundations of Mathematics 10',
+  code: 'FOM10',
+  description: 'Saskatchewan curriculum focusing on measurement, surface area, volume, trigonometry, and problem-solving skills.',
+  color: '#3b82f6',
+  teacher: 'Mrs. Wilson',
+  progress: 65,
+  modules: [
+    {
+      id: 'm1',
+      name: 'Unit 1: Measurement & Area',
+      description: 'Learn the basics of measurement and surface area',
+      position: 1,
+      isExpanded: true,
+      items: [
+        { id: 'i1', title: 'Introduction to Measurement', type: 'PAGE', content: null, fileUrl: null, linkUrl: null, position: 1, assignment: null, isCompleted: true, grade: null },
+        { id: 'i2', title: 'Surface Area Formulas', type: 'PAGE', content: null, fileUrl: null, linkUrl: null, position: 2, assignment: null, isCompleted: true, grade: null },
+        { id: 'i3', title: 'Practice Problems Worksheet', type: 'FILE', content: null, fileUrl: '/files/worksheet.pdf', linkUrl: null, position: 3, assignment: null, isCompleted: true, grade: null },
+        { id: 'i4', title: 'Unit 1 Quiz', type: 'ASSIGNMENT', content: null, fileUrl: null, linkUrl: null, position: 4, assignment: { id: 'a1', pointsPossible: 100, dueDate: '2026-01-15', instructions: 'Complete all problems. Show your work.', submissionTypes: 'FILE,TEXT' }, isCompleted: true, grade: 88 },
+      ],
+    },
+    {
+      id: 'm2',
+      name: 'Unit 2: Volume & 3D Shapes',
+      description: 'Understanding volume calculations for 3D objects',
+      position: 2,
+      isExpanded: true,
+      items: [
+        { id: 'i5', title: 'Volume of Prisms', type: 'PAGE', content: null, fileUrl: null, linkUrl: null, position: 1, assignment: null, isCompleted: true, grade: null },
+        { id: 'i6', title: 'Volume of Cylinders', type: 'PAGE', content: null, fileUrl: null, linkUrl: null, position: 2, assignment: null, isCompleted: false, grade: null },
+        { id: 'i7', title: 'Volume Assignment', type: 'ASSIGNMENT', content: null, fileUrl: null, linkUrl: null, position: 3, assignment: { id: 'a2', pointsPossible: 50, dueDate: '2026-01-22', instructions: 'Calculate the volume for each shape.', submissionTypes: 'FILE' }, isCompleted: false, grade: null },
+      ],
+    },
+    {
+      id: 'm3',
+      name: 'Unit 3: Trigonometry',
+      description: 'Introduction to trigonometric ratios',
+      position: 3,
+      isExpanded: false,
+      items: [
+        { id: 'i8', title: 'Intro to Trigonometry', type: 'PAGE', content: null, fileUrl: null, linkUrl: null, position: 1, assignment: null, isCompleted: false, grade: null },
+        { id: 'i9', title: 'SOH-CAH-TOA Tutorial', type: 'LINK', content: null, fileUrl: null, linkUrl: 'https://example.com/trig', position: 2, assignment: null, isCompleted: false, grade: null },
+        { id: 'i10', title: 'Trigonometry Test', type: 'ASSIGNMENT', content: null, fileUrl: null, linkUrl: null, position: 3, assignment: { id: 'a3', pointsPossible: 100, dueDate: '2026-02-01', instructions: 'Complete all trig problems.', submissionTypes: 'FILE,TEXT' }, isCompleted: false, grade: null },
+      ],
+    },
+  ],
+  announcements: [
+    { id: 'ann1', title: 'Welcome to FOM10!', content: 'Welcome to Foundations of Math 10. Please review the syllabus and complete Unit 1 by end of week.', isPinned: true, createdAt: '2026-01-10', author: 'Mrs. Wilson' },
+    { id: 'ann2', title: 'Office Hours', content: 'I will be available for extra help Tuesdays and Thursdays after school.', isPinned: false, createdAt: '2026-01-08', author: 'Mrs. Wilson' },
+  ],
+};
 
 export default function CourseDetailPage() {
   const { data: session, status } = useSession();
+  const { isDemo, demoUser, isDemoLoading } = useDemoSession();
   const router = useRouter();
   const params = useParams();
   const courseId = params.courseId as string;
+
   const [course, setCourse] = useState<Course | null>(null);
-  const [activeTab, setActiveTab] = useState<'modules' | 'announcements' | 'discussions' | 'grades'>('modules');
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'modules' | 'announcements' | 'grades'>('modules');
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+
+  // Submission modal state
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<{ item: ModuleItem; assignment: Assignment } | null>(null);
+  const [submissionContent, setSubmissionContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  const currentUser = isDemo && demoUser ? demoUser : session?.user;
+  const isLoggedIn = isDemo || status === 'authenticated';
+  const isStudent = currentUser?.role === 'STUDENT';
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (isDemoLoading) return;
+
+    if (!isDemo && status === 'unauthenticated') {
       router.push('/login');
     }
-  }, [status, router]);
+  }, [status, router, isDemo, isDemoLoading]);
 
   useEffect(() => {
-    // Mock course data
-    setCourse({
-      id: courseId,
-      name: 'Introduction to Web Development',
-      code: 'WEB101',
-      description: 'Learn HTML, CSS, and JavaScript to build modern websites from scratch. This comprehensive course covers everything from basic markup to responsive design and interactivity.',
-      color: '#00d4aa',
-      teacher: 'Dr. Sarah Smith',
-      progress: 75,
-      modules: [
-        {
-          id: '1',
-          name: 'HTML Fundamentals',
-          description: 'Learn the basics of HTML markup',
-          isExpanded: true,
-          items: [
-            { id: '1-1', title: 'Introduction to HTML', type: 'PAGE', isCompleted: true },
-            { id: '1-2', title: 'HTML Elements & Tags', type: 'PAGE', isCompleted: true },
-            { id: '1-3', title: 'Build Your First Web Page', type: 'ASSIGNMENT', isCompleted: true, dueDate: '2024-01-10' },
-            { id: '1-4', title: 'HTML Quiz', type: 'QUIZ', isCompleted: true },
-          ],
-        },
-        {
-          id: '2',
-          name: 'CSS Styling',
-          description: 'Master CSS for beautiful layouts',
-          isExpanded: true,
-          items: [
-            { id: '2-1', title: 'CSS Basics', type: 'PAGE', isCompleted: true },
-            { id: '2-2', title: 'Selectors & Properties', type: 'PAGE', isCompleted: true },
-            { id: '2-3', title: 'CSS Grid Layout', type: 'ASSIGNMENT', isCompleted: false, dueDate: '2024-01-20' },
-            { id: '2-4', title: 'Flexbox Tutorial', type: 'FILE', isCompleted: false },
-          ],
-        },
-        {
-          id: '3',
-          name: 'JavaScript Basics',
-          description: 'Introduction to JavaScript programming',
-          isExpanded: false,
-          items: [
-            { id: '3-1', title: 'Variables & Data Types', type: 'PAGE', isCompleted: false },
-            { id: '3-2', title: 'Functions & Scope', type: 'PAGE', isCompleted: false },
-            { id: '3-3', title: 'DOM Manipulation', type: 'PAGE', isCompleted: false },
-            { id: '3-4', title: 'Portfolio Website', type: 'ASSIGNMENT', isCompleted: false, dueDate: '2024-01-30' },
-          ],
-        },
-      ],
-    });
-  }, [courseId]);
+    async function fetchCourse() {
+      if (!isLoggedIn || !currentUser) return;
+
+      // Demo mode - use mock data
+      if (isDemo) {
+        setCourse(DEMO_COURSE);
+        setExpandedModules(new Set(DEMO_COURSE.modules.filter(m => m.isExpanded).map(m => m.id)));
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/courses/${courseId}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setCourse(data.course);
+          // Expand first module by default
+          if (data.course.modules.length > 0) {
+            setExpandedModules(new Set([data.course.modules[0].id]));
+          }
+        } else {
+          console.error('Failed to fetch course:', data.error);
+        }
+      } catch (error) {
+        console.error('Failed to fetch course:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchCourse();
+  }, [courseId, isLoggedIn, currentUser, isDemo]);
 
   const toggleModule = (moduleId: string) => {
-    setCourse((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        modules: prev.modules.map((m) =>
-          m.id === moduleId ? { ...m, isExpanded: !m.isExpanded } : m
-        ),
-      };
+    setExpandedModules((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(moduleId)) {
+        newSet.delete(moduleId);
+      } else {
+        newSet.add(moduleId);
+      }
+      return newSet;
     });
+  };
+
+  const openSubmitModal = (item: ModuleItem) => {
+    if (item.assignment) {
+      setSelectedAssignment({ item, assignment: item.assignment });
+      setSubmissionContent('');
+      setSubmitMessage('');
+      setShowSubmitModal(true);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedAssignment || !submissionContent.trim()) {
+      setSubmitMessage('Please enter your submission content');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    if (isDemo) {
+      // Demo mode - simulate submission
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setCourse((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          modules: prev.modules.map((m) => ({
+            ...m,
+            items: m.items.map((i) =>
+              i.id === selectedAssignment.item.id ? { ...i, isCompleted: true } : i
+            ),
+          })),
+        };
+      });
+      setSubmitMessage('Submitted! +10 XP (Demo mode)');
+      setTimeout(() => {
+        setShowSubmitModal(false);
+      }, 1500);
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/student/submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assignmentId: selectedAssignment.assignment.id,
+          content: submissionContent,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitMessage(data.message || 'Submitted successfully!');
+        // Update the item as completed
+        setCourse((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            modules: prev.modules.map((m) => ({
+              ...m,
+              items: m.items.map((i) =>
+                i.id === selectedAssignment.item.id ? { ...i, isCompleted: true } : i
+              ),
+            })),
+          };
+        });
+        setTimeout(() => {
+          setShowSubmitModal(false);
+        }, 1500);
+      } else {
+        setSubmitMessage(data.error || 'Failed to submit');
+      }
+    } catch {
+      setSubmitMessage('An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getItemIcon = (type: ModuleItem['type']) => {
@@ -145,19 +306,50 @@ export default function CourseDetailPage() {
     }
   };
 
-  if (status === 'loading' || !course) {
+  if (isDemoLoading || (!isDemo && status === 'loading') || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00d4aa]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--evergreen)]"></div>
       </div>
     );
   }
 
+  if (!course) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">📚</div>
+        <h3 className="text-xl font-semibold text-[var(--evergreen)] mb-2">Course Not Found</h3>
+        <p className="text-[var(--text-muted)] mb-4">This course may not exist or you don&apos;t have access.</p>
+        <Link href="/courses">
+          <Button>Back to Courses</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Calculate grades for grades tab
+  const gradedItems = course.modules.flatMap((m) =>
+    m.items.filter((i) => i.assignment && i.isCompleted)
+  );
+
   return (
     <div className="space-y-6">
+      {/* Demo Banner */}
+      {isDemo && (
+        <div className="ice-block p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📚</span>
+            <div>
+              <p className="font-semibold text-[var(--evergreen)]">Demo Mode - Course View</p>
+              <p className="text-sm text-[var(--text-muted)]">Exploring with sample curriculum data</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Course Header */}
       <div
-        className="glass-card-solid p-6 relative overflow-hidden"
+        className="ice-block p-6 relative overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${course.color}15, ${course.color}05)`,
           borderLeft: `4px solid ${course.color}`,
@@ -167,34 +359,37 @@ export default function CourseDetailPage() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="badge badge-graded">{course.code}</span>
-              <Link href="/courses" className="text-sm text-gray-500 hover:text-gray-700">
+              <Link href="/courses" className="text-sm text-[var(--text-muted)] hover:text-[var(--evergreen)]">
                 ← Back to Courses
               </Link>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{course.name}</h1>
-            <p className="text-gray-600 mt-1">Instructor: {course.teacher}</p>
-            <p className="text-gray-500 mt-2 max-w-2xl">{course.description}</p>
+            <h1 className="text-2xl font-bold text-[var(--evergreen)]">{course.name}</h1>
+            <p className="text-[var(--text-secondary)] mt-1">Instructor: {course.teacher}</p>
+            {course.description && (
+              <p className="text-[var(--text-muted)] mt-2 max-w-2xl">{course.description}</p>
+            )}
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Course Progress</div>
-              <div className="text-2xl font-bold gradient-text">{course.progress}%</div>
-            </div>
-            <div className="w-48">
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${course.progress}%` }}></div>
+          {course.progress !== null && (
+            <div className="flex flex-col items-end gap-2">
+              <div className="text-right">
+                <div className="text-sm text-[var(--text-muted)]">Course Progress</div>
+                <div className="text-2xl font-bold gradient-text">{course.progress}%</div>
+              </div>
+              <div className="w-48">
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${course.progress}%` }}></div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 pb-2">
+      <div className="flex gap-2 border-b border-[var(--frost-border)] pb-2">
         {[
           { key: 'modules', label: 'Modules' },
           { key: 'announcements', label: 'Announcements' },
-          { key: 'discussions', label: 'Discussions' },
           { key: 'grades', label: 'Grades' },
         ].map((tab) => (
           <button
@@ -202,8 +397,8 @@ export default function CourseDetailPage() {
             onClick={() => setActiveTab(tab.key as typeof activeTab)}
             className={`px-4 py-2 rounded-t-lg font-medium transition-all ${
               activeTab === tab.key
-                ? 'bg-gradient-to-r from-[#00d4aa] to-[#00a8cc] text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-gradient-to-r from-[var(--aurora-green)] to-[var(--accent-cyan)] text-white'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--ice-blue)]/50'
             }`}
           >
             {tab.label}
@@ -215,15 +410,15 @@ export default function CourseDetailPage() {
       {activeTab === 'modules' && (
         <div className="space-y-4">
           {course.modules.map((module) => (
-            <div key={module.id} className="glass-card-solid overflow-hidden">
+            <div key={module.id} className="ice-block overflow-hidden">
               <button
                 onClick={() => toggleModule(module.id)}
-                className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full p-4 flex items-center justify-between hover:bg-[var(--ice-blue)]/30 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <svg
-                    className={`w-5 h-5 text-gray-500 transition-transform ${
-                      module.isExpanded ? 'rotate-90' : ''
+                    className={`w-5 h-5 text-[var(--text-muted)] transition-transform ${
+                      expandedModules.has(module.id) ? 'rotate-90' : ''
                     }`}
                     fill="none"
                     stroke="currentColor"
@@ -232,26 +427,28 @@ export default function CourseDetailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                   <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">{module.name}</h3>
-                    <p className="text-sm text-gray-500">{module.description}</p>
+                    <h3 className="font-semibold text-[var(--evergreen)]">{module.name}</h3>
+                    {module.description && (
+                      <p className="text-sm text-[var(--text-muted)]">{module.description}</p>
+                    )}
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-[var(--text-muted)]">
                   {module.items.filter((i) => i.isCompleted).length}/{module.items.length} completed
                 </div>
               </button>
-              {module.isExpanded && (
-                <div className="border-t border-gray-100">
+              {expandedModules.has(module.id) && (
+                <div className="border-t border-[var(--frost-border-light)]">
                   {module.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-3 p-3 pl-12 hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 p-3 pl-12 hover:bg-[var(--ice-blue)]/20 transition-colors"
                     >
                       <div
                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                           item.isCompleted
-                            ? 'bg-[#00d4aa] border-[#00d4aa]'
-                            : 'border-gray-300'
+                            ? 'bg-[var(--aurora-green)] border-[var(--aurora-green)]'
+                            : 'border-[var(--frost-border)]'
                         }`}
                       >
                         {item.isCompleted && (
@@ -262,16 +459,24 @@ export default function CourseDetailPage() {
                       </div>
                       {getItemIcon(item.type)}
                       <div className="flex-1">
-                        <span className={item.isCompleted ? 'text-gray-500' : 'text-gray-900'}>
+                        <span className={item.isCompleted ? 'text-[var(--text-muted)]' : 'text-[var(--evergreen)]'}>
                           {item.title}
                         </span>
                       </div>
-                      {item.dueDate && (
-                        <span className="text-sm text-gray-400">
-                          Due {new Date(item.dueDate).toLocaleDateString()}
+                      {item.assignment?.dueDate && (
+                        <span className="text-sm text-[var(--text-muted)]">
+                          Due {new Date(item.assignment.dueDate).toLocaleDateString()}
                         </span>
                       )}
-                      <span className="text-xs uppercase text-gray-400 font-medium">
+                      {item.grade !== null && (
+                        <span className="badge badge-graded">{item.grade}%</span>
+                      )}
+                      {item.type === 'ASSIGNMENT' && isStudent && !item.isCompleted && (
+                        <Button size="sm" onClick={() => openSubmitModal(item)}>
+                          Submit
+                        </Button>
+                      )}
+                      <span className="text-xs uppercase text-[var(--text-muted)] font-medium">
                         {item.type}
                       </span>
                     </div>
@@ -284,88 +489,147 @@ export default function CourseDetailPage() {
       )}
 
       {activeTab === 'announcements' && (
-        <div className="glass-card-solid p-6">
-          <div className="space-y-4">
-            <div className="p-4 border-l-4 border-[#00d4aa] bg-[#00d4aa]/5 rounded-r-lg">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-semibold text-gray-900">Welcome to Web Development!</h4>
-                  <p className="text-sm text-gray-500 mt-1">Posted by Dr. Sarah Smith • Jan 10, 2024</p>
+        <div className="ice-block p-6">
+          {course.announcements.length === 0 ? (
+            <p className="text-[var(--text-muted)] text-center py-8">No announcements yet</p>
+          ) : (
+            <div className="space-y-4">
+              {course.announcements.map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className={`p-4 rounded-xl ${
+                    announcement.isPinned
+                      ? 'bg-[var(--aurora-green)]/10 border-l-4 border-[var(--aurora-green)]'
+                      : 'bg-[var(--ice-blue)]/30'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-semibold text-[var(--evergreen)]">{announcement.title}</h4>
+                      <p className="text-sm text-[var(--text-muted)] mt-1">
+                        Posted by {announcement.author} • {new Date(announcement.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {announcement.isPinned && <span className="badge badge-graded">Pinned</span>}
+                  </div>
+                  <p className="text-[var(--text-secondary)] mt-2">{announcement.content}</p>
                 </div>
-                <span className="badge badge-graded">Pinned</span>
-              </div>
-              <p className="text-gray-700 mt-2">
-                Welcome to WEB101! I am excited to have you in this course. Please review the syllabus and complete the first module by Friday.
-              </p>
+              ))}
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-900">Office Hours Reminder</h4>
-              <p className="text-sm text-gray-500 mt-1">Posted by Dr. Sarah Smith • Jan 8, 2024</p>
-              <p className="text-gray-700 mt-2">
-                My office hours are Tuesday and Thursday 2-4 PM. Feel free to drop by with any questions!
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'discussions' && (
-        <div className="glass-card-solid p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Discussion Topics</h3>
-            <Button size="sm">New Topic</Button>
-          </div>
-          <div className="space-y-3">
-            {[
-              { title: 'Introduce Yourself!', replies: 24, lastActivity: '2h ago' },
-              { title: 'Question about CSS Grid vs Flexbox', replies: 8, lastActivity: '5h ago' },
-              { title: 'Best resources for learning JavaScript?', replies: 12, lastActivity: '1d ago' },
-            ].map((topic, i) => (
-              <div key={i} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-gray-900">{topic.title}</h4>
-                  <span className="text-sm text-gray-500">{topic.lastActivity}</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">{topic.replies} replies</p>
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       )}
 
       {activeTab === 'grades' && (
-        <div className="glass-card-solid overflow-hidden">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Assignment</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Grade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { name: 'Build Your First Web Page', due: 'Jan 10', status: 'Graded', grade: '92/100' },
-                { name: 'CSS Grid Layout', due: 'Jan 20', status: 'Pending', grade: '-' },
-                { name: 'Portfolio Website', due: 'Jan 30', status: 'Not Submitted', grade: '-' },
-              ].map((assignment, i) => (
-                <tr key={i}>
-                  <td className="font-medium">{assignment.name}</td>
-                  <td>{assignment.due}</td>
-                  <td>
-                    <span className={`badge ${
-                      assignment.status === 'Graded' ? 'badge-graded' :
-                      assignment.status === 'Pending' ? 'badge-pending' : 'badge-absent'
-                    }`}>
-                      {assignment.status}
-                    </span>
-                  </td>
-                  <td className="font-medium">{assignment.grade}</td>
+        <div className="ice-block overflow-hidden p-0">
+          {gradedItems.length === 0 ? (
+            <p className="text-[var(--text-muted)] text-center py-8">No graded assignments yet</p>
+          ) : (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Assignment</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Grade</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {course.modules.flatMap((m) =>
+                  m.items
+                    .filter((i) => i.assignment)
+                    .map((item) => (
+                      <tr key={item.id}>
+                        <td className="font-medium text-[var(--evergreen)]">{item.title}</td>
+                        <td className="text-[var(--text-muted)]">
+                          {item.assignment?.dueDate
+                            ? new Date(item.assignment.dueDate).toLocaleDateString()
+                            : 'No due date'}
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              item.grade !== null
+                                ? 'badge-graded'
+                                : item.isCompleted
+                                ? 'badge-pending'
+                                : 'badge-absent'
+                            }`}
+                          >
+                            {item.grade !== null ? 'Graded' : item.isCompleted ? 'Submitted' : 'Not Submitted'}
+                          </span>
+                        </td>
+                        <td className="font-medium">
+                          {item.grade !== null ? `${item.grade}/${item.assignment?.pointsPossible}` : '-'}
+                        </td>
+                      </tr>
+                    ))
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Submit Assignment Modal */}
+      {showSubmitModal && selectedAssignment && (
+        <div className="modal-overlay" onClick={() => setShowSubmitModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="text-xl font-bold text-[var(--evergreen)]">Submit Assignment</h2>
+            </div>
+            <div className="modal-body space-y-4">
+              <div>
+                <h3 className="font-semibold text-[var(--evergreen)]">{selectedAssignment.item.title}</h3>
+                {selectedAssignment.assignment.dueDate && (
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Due: {new Date(selectedAssignment.assignment.dueDate).toLocaleDateString()}
+                  </p>
+                )}
+                <p className="text-sm text-[var(--text-muted)]">
+                  Points: {selectedAssignment.assignment.pointsPossible}
+                </p>
+              </div>
+
+              {selectedAssignment.assignment.instructions && (
+                <div className="p-3 rounded-xl bg-[var(--ice-blue)]/30 border border-[var(--frost-border-light)]">
+                  <p className="text-sm font-medium text-[var(--text-secondary)] mb-1">Instructions:</p>
+                  <p className="text-sm text-[var(--text-muted)]">{selectedAssignment.assignment.instructions}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="input-label">Your Submission</label>
+                <textarea
+                  value={submissionContent}
+                  onChange={(e) => setSubmissionContent(e.target.value)}
+                  className="textarea-field"
+                  rows={6}
+                  placeholder="Enter your answer or paste your work here..."
+                />
+              </div>
+
+              {submitMessage && (
+                <div
+                  className={`p-3 rounded-lg text-sm ${
+                    submitMessage.includes('Submitted') || submitMessage.includes('success')
+                      ? 'bg-green-50 text-green-600 border border-green-200'
+                      : 'bg-red-50 text-red-600 border border-red-200'
+                  }`}
+                >
+                  {submitMessage}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <Button variant="ghost" onClick={() => setShowSubmitModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} isLoading={isSubmitting}>
+                Submit Assignment
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -7,8 +7,8 @@ import XPBar from './XPBar';
 import { useDemoSession } from './DemoSessionProvider';
 
 export default function Navbar() {
-  const { data: session } = useSession();
-  const { isDemo, demoUser, clearDemoSession } = useDemoSession();
+  const { data: session, status } = useSession();
+  const { isDemo, demoUser, isDemoLoading, clearDemoSession } = useDemoSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -23,7 +23,10 @@ export default function Navbar() {
     level: demoUser.level,
   } : session?.user;
 
-  const isLoggedIn = isDemo || !!session;
+  // Consider logged in if demo mode active OR real session exists
+  // Wait for both demo loading and auth status to resolve
+  const isLoading = isDemoLoading || status === 'loading';
+  const isLoggedIn = !isLoading && (isDemo || !!session);
 
   const roleLinks: Record<string, Array<{ href: string; label: string }>> = {
     MASTER: [
@@ -88,7 +91,7 @@ export default function Navbar() {
         )}
 
         {/* Desktop Navigation */}
-        {isLoggedIn && (
+        {!isLoading && isLoggedIn && (
           <div className="hidden md:flex items-center gap-1">
             {links.map((link) => (
               <Link
@@ -104,7 +107,9 @@ export default function Navbar() {
 
         {/* Right Side */}
         <div className="flex items-center gap-3">
-          {isLoggedIn && currentUser ? (
+          {isLoading ? (
+            <div className="w-8 h-8 rounded-full bg-[var(--glass-bg)] animate-pulse"></div>
+          ) : isLoggedIn && currentUser ? (
             <>
               {/* XP Bar for Students */}
               {currentUser.role === 'STUDENT' && (

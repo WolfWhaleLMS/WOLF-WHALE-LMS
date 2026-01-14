@@ -75,31 +75,28 @@ export default function ParentDashboard() {
   }, [session, selectedChildId, isDemo, demoUser]);
 
   useEffect(() => {
-    if (selectedChildId) {
+    async function fetchDashboard() {
+      if (!selectedChildId) return;
+
       if (isDemo) {
         // Demo mode - use Saskatchewan Grade 10 mock data
         setChildData(DEMO_CHILD_DATA);
-      } else {
-        // Real mode - would fetch from API
-        setChildData({
-          id: selectedChildId,
-          name: 'Emma Johnson',
-          grade: 87,
-          attendance: 95,
-          xp: 2450,
-          level: 3,
-          recentGrades: [
-            { assignment: 'Polynomial Operations', grade: 92, maxGrade: 100, course: 'FOM10' },
-            { assignment: 'Literary Analysis', grade: 88, maxGrade: 100, course: 'ELA-A10' },
-            { assignment: 'Lab Report', grade: 95, maxGrade: 100, course: 'SCI10' },
-          ],
-          upcomingAssignments: [
-            { title: 'Trigonometry Test', dueDate: '2026-01-20', course: 'FOM10' },
-            { title: 'Essay Assignment', dueDate: '2026-01-22', course: 'ELA-A10' },
-          ],
-        });
+        return;
+      }
+
+      // Real mode - fetch from API
+      try {
+        const response = await fetch(`/api/parent/dashboard?childId=${selectedChildId}`);
+        const data = await response.json();
+        if (response.ok && data.dashboard) {
+          setChildData(data.dashboard);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard:', error);
       }
     }
+
+    fetchDashboard();
   }, [selectedChildId, isDemo]);
 
   if (isDemoLoading || (!isDemo && status === 'loading')) {
