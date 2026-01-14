@@ -35,6 +35,7 @@ export default function Navbar() {
     STUDENT: [
       { href: '/dashboard', label: 'Dashboard' },
       { href: '/courses', label: 'Courses' },
+      { href: '/pet', label: 'My Pet' },
       { href: '/calendar', label: 'Calendar' },
       { href: '/inbox', label: 'Inbox' },
     ],
