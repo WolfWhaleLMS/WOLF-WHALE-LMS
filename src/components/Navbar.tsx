@@ -34,31 +34,34 @@ export default function Navbar() {
       { href: '/master/schools', label: 'Schools' },
       { href: '/master/admins', label: 'Admins' },
       { href: '/admin/reports', label: 'Reports' },
+      { href: '/resources', label: 'Resources' },
     ],
     STUDENT: [
       { href: '/dashboard', label: 'Dashboard' },
       { href: '/courses', label: 'Courses' },
       { href: '/pet', label: 'My Pet' },
+      { href: '/resources', label: 'Resources' },
       { href: '/calendar', label: 'Calendar' },
-      { href: '/inbox', label: 'Inbox' },
     ],
     TEACHER: [
       { href: '/teacher/dashboard', label: 'Dashboard' },
       { href: '/teacher/courses', label: 'Courses' },
       { href: '/teacher/gradebook', label: 'Gradebook' },
       { href: '/teacher/attendance', label: 'Attendance' },
+      { href: '/resources', label: 'Resources' },
     ],
     PARENT: [
       { href: '/parent/dashboard', label: 'Dashboard' },
       { href: '/parent/grades', label: 'Grades' },
       { href: '/parent/attendance', label: 'Attendance' },
-      { href: '/inbox', label: 'Messages' },
+      { href: '/resources', label: 'Resources' },
     ],
     ADMIN: [
       { href: '/admin/dashboard', label: 'Dashboard' },
       { href: '/admin/users', label: 'Users' },
       { href: '/admin/courses', label: 'Courses' },
       { href: '/admin/reports', label: 'Reports' },
+      { href: '/resources', label: 'Resources' },
     ],
   };
 
