@@ -9,8 +9,8 @@ datasource db {
 }
 
 // User roles hierarchy:
-// MASTER -> can create ADMIN
-// ADMIN -> can create TEACHER, STUDENT, PARENT
+// MASTER -> can create ADMIN and Schools
+// ADMIN -> can create TEACHER, STUDENT, PARENT within their School
 // TEACHER -> can manage courses/grades
 // STUDENT -> can view courses/submit work
 // PARENT -> can view child progress
@@ -22,6 +22,7 @@ model User {
   lastName      String
   role          String    @default("STUDENT") // MASTER, ADMIN, TEACHER, STUDENT, PARENT
   createdById   String?   // Who created this user (for audit trail)
+  schoolId      String?   // School this user belongs to (for ADMIN, TEACHER, STUDENT, PARENT)
   avatar        String?
   xp            Int       @default(0)
   level         Int       @default(1)
@@ -29,6 +30,9 @@ model User {
   lastActiveAt  DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  // School relation
+  school            School?            @relation(fields: [schoolId], references: [id], onDelete: SetNull)
 
   // Relations
   enrollments       Enrollment[]
@@ -49,6 +53,27 @@ model User {
   parents           ParentChild[]      @relation("ChildRelation")
   permissionSlips   PermissionSlip[]   @relation("StudentPermissions")
   signedSlips       PermissionSlip[]   @relation("SignedBy")
+}
+
+// School/Organization - created by MASTER users
+model School {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique  // URL-friendly identifier
+  domain          String?   // Custom domain if applicable
+  logoUrl         String?
+  primaryColor    String    @default("#3b82f6")
+  subscriptionTier String   @default("FREE") // FREE, STARTER, PRO, ENTERPRISE
+  stripeCustomerId String?  // Stripe customer ID for billing
+  stripeSubscriptionId String? // Stripe subscription ID
+  maxUsers        Int       @default(50) // User limit based on subscription
+  maxCourses      Int       @default(10) // Course limit based on subscription
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  users           User[]
 }
 
 model ParentChild {

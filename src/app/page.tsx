@@ -6,20 +6,20 @@ export default function LandingPage() {
     <div className="min-h-screen">
       <Navbar />
 
-      {/* Hero Section - Boreal Forest */}
+      {/* Hero Section - Glass/Ice Premium */}
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 ice-block rounded-full text-sm font-semibold text-[var(--evergreen)]">
-                <span className="w-2 h-2 rounded-full bg-[var(--aurora-green)] animate-pulse"></span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 ice-block rounded-full text-sm font-semibold text-[var(--text-primary)]">
+                <span className="w-2 h-2 rounded-full bg-[var(--accent-cyan)] animate-pulse"></span>
                 Saskatchewan K-12 Curriculum
               </div>
-              <h1 className="text-5xl md:text-6xl font-bold text-[var(--evergreen)] leading-tight">
+              <h1 className="text-5xl md:text-6xl font-bold text-[var(--text-primary)] leading-tight">
                 Learn. <span className="gradient-text-aurora">Achieve.</span> Level Up.
               </h1>
               <p className="text-xl text-[var(--text-secondary)]">
-                Wolf Whale transforms education with beautiful Frosted Ice design, engaging gamification,
+                Wolf Whale transforms education with beautiful Glass UI design, engaging gamification,
                 and powerful tools designed for Saskatchewan K-12 schools.
               </p>
               <div className="flex flex-wrap gap-4">
@@ -51,7 +51,7 @@ export default function LandingPage() {
                   <div className="flex items-center gap-3">
                     <div className="level-badge">Lv.3</div>
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-[var(--evergreen)]">Emma Johnson</div>
+                      <div className="text-sm font-semibold text-[var(--text-primary)]">Emma Johnson</div>
                       <div className="xp-bar-container mt-1">
                         <div className="xp-bar" style={{ width: '75%' }}></div>
                       </div>
@@ -73,7 +73,7 @@ export default function LandingPage() {
                   </div>
                   <div className="achievement-badge">
                     <span className="text-xl">🏆</span>
-                    <span className="text-sm text-[var(--evergreen)]">Math Whiz Achievement Unlocked!</span>
+                    <span className="text-sm text-[var(--text-primary)]">Math Whiz Achievement Unlocked!</span>
                   </div>
                 </div>
               </div>
@@ -86,7 +86,7 @@ export default function LandingPage() {
       <section id="features" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[var(--evergreen)] mb-4">
+            <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">
               Built for <span className="gradient-text-aurora">Saskatchewan Schools</span>
             </h2>
             <p className="text-xl text-[var(--text-secondary)] max-w-2xl mx-auto">
@@ -127,10 +127,10 @@ export default function LandingPage() {
               },
             ].map((feature, index) => (
               <div key={index} className="ice-block p-6 space-y-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[var(--evergreen)] to-[var(--evergreen-light)] flex items-center justify-center text-2xl shadow-lg border-2 border-white/30">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[var(--accent-blue)] to-[var(--accent-purple)] flex items-center justify-center text-2xl shadow-lg border border-white/30" style={{ boxShadow: 'var(--accent-glow)' }}>
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-[var(--evergreen)]">{feature.title}</h3>
+                <h3 className="text-xl font-bold text-[var(--text-primary)]">{feature.title}</h3>
                 <p className="text-[var(--text-secondary)]">{feature.description}</p>
               </div>
             ))}
@@ -142,7 +142,7 @@ export default function LandingPage() {
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-[var(--evergreen)] mb-4">
+            <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">
               Designed for <span className="gradient-text-aurora">Everyone</span>
             </h2>
             <p className="text-xl text-[var(--text-secondary)]">
@@ -154,19 +154,19 @@ export default function LandingPage() {
               {
                 role: 'Students',
                 icon: '🎓',
-                color: 'from-[var(--evergreen)] to-[var(--evergreen-light)]',
+                color: 'from-[var(--accent-blue)] to-[var(--accent-purple)]',
                 features: ['Track assignments', 'Earn XP & badges', 'View grades', 'Join discussions'],
               },
               {
                 role: 'Teachers',
                 icon: '👨‍🏫',
-                color: 'from-[var(--aurora-blue)] to-blue-600',
+                color: 'from-[var(--accent-cyan)] to-[var(--accent-blue)]',
                 features: ['Create courses', 'Grade submissions', 'Track attendance', 'Send announcements'],
               },
               {
                 role: 'Parents',
                 icon: '👨‍👩‍👧',
-                color: 'from-[var(--aurora-green)] to-emerald-600',
+                color: 'from-[var(--success-start)] to-[var(--success-end)]',
                 features: ['Monitor progress', 'View attendance', 'Check grades', 'Message teachers'],
               },
               {
@@ -177,7 +177,7 @@ export default function LandingPage() {
               },
             ].map((card, index) => (
               <div key={index} className="ice-block overflow-hidden">
-                <div className={`h-24 bg-gradient-to-br ${card.color} flex items-center justify-center gap-3`}>
+                <div className={`h-24 bg-gradient-to-br ${card.color} flex items-center justify-center gap-3`} style={{ boxShadow: 'var(--accent-glow)' }}>
                   <span className="text-3xl">{card.icon}</span>
                   <h3 className="text-xl font-bold text-white">{card.role}</h3>
                 </div>
@@ -185,7 +185,7 @@ export default function LandingPage() {
                   <ul className="space-y-2">
                     {card.features.map((feature, i) => (
                       <li key={i} className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-[var(--aurora-green)]" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 text-[var(--accent-cyan)]" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                         <span className="text-[var(--text-secondary)] text-sm">{feature}</span>
@@ -203,7 +203,7 @@ export default function LandingPage() {
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="ice-block p-12 text-center">
-            <h2 className="text-4xl font-bold text-[var(--evergreen)] mb-4">
+            <h2 className="text-4xl font-bold text-[var(--text-primary)] mb-4">
               Ready to Explore Wolf Whale?
             </h2>
             <p className="text-xl text-[var(--text-secondary)] mb-8">
@@ -218,30 +218,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer - Ice Style */}
-      <footer className="py-12 px-4 border-t-2 border-[var(--frost-border)] bg-white/30">
+      {/* Footer - Glass Style */}
+      <footer className="py-12 px-4 border-t border-[var(--glass-border)] bg-[var(--glass-bg)]">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--evergreen)] to-[var(--evergreen-light)] flex items-center justify-center shadow-lg border-2 border-white/30">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent-blue)] to-[var(--accent-purple)] flex items-center justify-center shadow-lg border border-white/30" style={{ boxShadow: 'var(--accent-glow)' }}>
                   <span className="text-xl">🐋</span>
                 </div>
                 <span className="text-xl font-bold gradient-text">Wolf Whale</span>
               </div>
               <p className="text-[var(--text-secondary)] text-sm">
-                Modern learning management with Frosted Ice design for Saskatchewan K-12 schools.
+                Modern learning management with Glass UI design for Saskatchewan K-12 schools.
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-[var(--evergreen)] mb-4">Product</h4>
+              <h4 className="font-bold text-[var(--text-primary)] mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
-                <li><Link href="#features" className="hover:text-[var(--aurora-green)] transition-colors">Features</Link></li>
-                <li><Link href="/login" className="hover:text-[var(--aurora-green)] transition-colors">Demo</Link></li>
+                <li><Link href="#features" className="hover:text-[var(--accent-cyan)] transition-colors">Features</Link></li>
+                <li><Link href="/login" className="hover:text-[var(--accent-cyan)] transition-colors">Demo</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-[var(--evergreen)] mb-4">Curriculum</h4>
+              <h4 className="font-bold text-[var(--text-primary)] mb-4">Curriculum</h4>
               <ul className="space-y-2 text-sm text-[var(--text-muted)]">
                 <li>Grade 10 Math</li>
                 <li>Grade 10 ELA</li>
@@ -250,14 +250,14 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-[var(--evergreen)] mb-4">Legal</h4>
+              <h4 className="font-bold text-[var(--text-primary)] mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
-                <li><Link href="/privacy" className="hover:text-[var(--aurora-green)] transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-[var(--aurora-green)] transition-colors">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="hover:text-[var(--accent-cyan)] transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="hover:text-[var(--accent-cyan)] transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t-2 border-[var(--frost-border)] text-center text-sm text-[var(--text-muted)]">
+          <div className="mt-12 pt-8 border-t border-[var(--glass-border)] text-center text-sm text-[var(--text-muted)]">
             © {new Date().getFullYear()} Wolf Whale LMS. Saskatchewan K-12 Curriculum.
           </div>
         </div>

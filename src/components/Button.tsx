@@ -1,12 +1,16 @@
 'use client';
 
-import { ButtonHTMLAttributes, ReactNode } from 'react';
+import { ButtonHTMLAttributes, ReactNode, useState } from 'react';
+import { playSfx } from '@/hooks/use-sfx';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'accent' | 'gold' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   children: ReactNode;
   isLoading?: boolean;
+  isActive?: boolean;
+  enableSound?: boolean;
+  soundType?: 'click' | 'submit' | 'toggle' | 'navigate';
 }
 
 export default function Button({
@@ -14,10 +18,17 @@ export default function Button({
   size = 'md',
   children,
   isLoading = false,
+  isActive = false,
+  enableSound = true,
+  soundType = 'click',
   className = '',
   disabled,
+  onClick,
+  onMouseEnter,
   ...props
 }: ButtonProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
   const variantClasses = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
@@ -33,12 +44,35 @@ export default function Button({
     lg: 'btn-lg',
   };
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (enableSound && !disabled && !isLoading) {
+      playSfx(soundType);
+    }
+    onClick?.(e);
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    setIsHovered(true);
+    if (enableSound && !disabled) {
+      playSfx('hover');
+    }
+    onMouseEnter?.(e);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
   return (
     <button
       className={`btn-3d ${variantClasses[variant]} ${sizeClasses[size]} ${className} ${
         disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''
-      }`}
+      } ${isActive ? 'active' : ''}`}
       disabled={disabled || isLoading}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      data-active={isActive}
       {...props}
     >
       {isLoading ? (
